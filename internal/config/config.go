@@ -55,10 +55,10 @@ func (c *Config) SetUser(username string) error {
 	if err != nil {
 		return fmt.Errorf("could not get config file path: %v", err)
 	}
-	// Why do I have to call it e?
-	e := os.WriteFile(configFilePath, bytes, 0644)
-	if e != nil {
-		fmt.Printf("could not write to config file: %v", e)
+
+	err = os.WriteFile(configFilePath, bytes, 0644)
+	if err != nil {
+		fmt.Printf("could not write to config file: %v", err)
 	}
 	return nil
 }
