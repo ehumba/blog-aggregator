@@ -7,18 +7,28 @@ import (
 )
 
 type Config struct {
-	DB_URL          string `json: db_url`
-	CurrentUserName string `json: current_user_name,omitempty`
+	DBURL           string `json:"db_url"`
+	CurrentUserName string `json:"current_user_name,omitempty"`
+}
+
+const configFileName = ".gatorconfig.json"
+
+func getConfigFilePath() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Printf("no home directory: %v", err)
+		return "", err
+	}
+	configFilePath := homeDir + "/" + configFileName
+	return configFilePath, nil
 }
 
 func Read() (Config, error) {
-	// Get and read the gatorconfig file
-	homeDir, err := os.UserHomeDir()
+	// Get and read config file
+	configFile, err := getConfigFilePath()
 	if err != nil {
-		fmt.Print("no home directory")
-		return Config{}, err
+		return Config{}, fmt.Errorf("could not get config file path: %v", err)
 	}
-	configFile := homeDir + "/" + "gatorconfig.json"
 
 	data, err := os.ReadFile(configFile)
 	if err != nil {
@@ -33,6 +43,22 @@ func Read() (Config, error) {
 	return config, nil
 }
 
-func (c Config) SetUser(username string) {
-	//make this function
+func (c *Config) SetUser(username string) {
+	c.CurrentUserName = username
+	bytes, err := json.MarshalIndent(c, "", "  ")
+	if err != nil {
+		fmt.Printf("Could not marshal Config: %v", err)
+		return
+	}
+
+	configFilePath, err := getConfigFilePath()
+	if err != nil {
+		fmt.Printf("could not get config file path: %v", err)
+		return
+	}
+	// Why do I have to call it e?
+	e := os.WriteFile(configFilePath, bytes, 0644)
+	if e != nil {
+		fmt.Printf("could not write to config file: %v", e)
+	}
 }
