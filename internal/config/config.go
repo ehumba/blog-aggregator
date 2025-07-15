@@ -11,7 +11,7 @@ type Config struct {
 	CurrentUserName string `json:"current_user_name,omitempty"`
 }
 
-const configFileName = ".gatorconfig.json"
+const configFileName = "gatorconfig.json"
 
 func getConfigFilePath() (string, error) {
 	homeDir, err := os.UserHomeDir()
@@ -19,7 +19,7 @@ func getConfigFilePath() (string, error) {
 		fmt.Printf("no home directory: %v", err)
 		return "", err
 	}
-	configFilePath := homeDir + "/" + configFileName
+	configFilePath := homeDir + "/projects/blog-aggregator/" + configFileName
 	return configFilePath, nil
 }
 
@@ -43,22 +43,22 @@ func Read() (Config, error) {
 	return config, nil
 }
 
-func (c *Config) SetUser(username string) {
+func (c *Config) SetUser(username string) error {
 	c.CurrentUserName = username
 	bytes, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
-		fmt.Printf("Could not marshal Config: %v", err)
-		return
+		return fmt.Errorf("could not marshal config: %v", err)
+
 	}
 
 	configFilePath, err := getConfigFilePath()
 	if err != nil {
-		fmt.Printf("could not get config file path: %v", err)
-		return
+		return fmt.Errorf("could not get config file path: %v", err)
 	}
 	// Why do I have to call it e?
 	e := os.WriteFile(configFilePath, bytes, 0644)
 	if e != nil {
 		fmt.Printf("could not write to config file: %v", e)
 	}
+	return nil
 }
