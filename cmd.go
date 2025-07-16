@@ -25,9 +25,21 @@ func handlerLogin(s *state, cmd command) error {
 	}
 
 	username := cmd.args[0]
-	s.cfg.CurrentUserName = username
+	s.cfg.SetUser(username)
 
-	fmt.Printf("username has been set to: %v", username)
+	fmt.Printf("username has been set to: %v\n", username)
 
 	return nil
+}
+
+func (c *commands) run(s *state, cmd command) error {
+	handler, ok := c.cmds[cmd.name]
+	if !ok {
+		return fmt.Errorf("command not found: %v", cmd.name)
+	}
+	return handler(s, cmd)
+}
+
+func (c *commands) register(name string, f func(*state, command) error) {
+	c.cmds[name] = f
 }
