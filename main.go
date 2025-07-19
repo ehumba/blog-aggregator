@@ -37,6 +37,7 @@ func main() {
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
+	cmds.register("users", handlerUsers)
 
 	// Get command-line arguments passed by the user
 	argsWithProg := os.Args
