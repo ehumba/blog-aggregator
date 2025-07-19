@@ -1,12 +1,18 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/ehumba/blog-aggregator/internal/config"
+	"github.com/ehumba/blog-aggregator/internal/database"
+	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 type state struct {
+	db  *database.Queries
 	cfg *config.Config
 }
 
@@ -25,10 +31,52 @@ func handlerLogin(s *state, cmd command) error {
 	}
 
 	username := cmd.args[0]
+
+	_, err := s.db.GetUser(context.Background(), username)
+	if err != nil {
+		return fmt.Errorf("user does not exist: %v", err)
+	}
+
 	s.cfg.SetUser(username)
 
 	fmt.Printf("username has been set to: %v\n", username)
 
+	return nil
+}
+
+func handlerRegister(s *state, cmd command) error {
+	if len(cmd.args) == 0 {
+		return fmt.Errorf("no name provided")
+	}
+	username := cmd.args[0]
+	user, err := s.db.CreateUser(context.Background(), database.CreateUserParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      username,
+	})
+	if err != nil {
+		// check for unique violation first
+		if pgErr, ok := err.(*pq.Error); ok {
+			if pgErr.Code == "23505" {
+				return fmt.Errorf("user with name %s already exists", username)
+			}
+		}
+		return fmt.Errorf("could not register user: %v", err)
+	}
+
+	s.cfg.SetUser(username)
+	fmt.Printf("New user %v successfully registered\n", username)
+	fmt.Printf("%+v\n", user)
+	return nil
+}
+
+func handlerReset(s *state, cmd command) error {
+	err := s.db.ClearTable(context.Background())
+	if err != nil {
+		return fmt.Errorf("database reset failed: %v", err)
+	}
+	fmt.Println("database reset successful")
 	return nil
 }
 

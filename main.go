@@ -1,10 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"os"
 
 	"github.com/ehumba/blog-aggregator/internal/config"
+	"github.com/ehumba/blog-aggregator/internal/database"
+
+	_ "github.com/lib/pq"
 )
 
 func main() {
@@ -14,7 +18,14 @@ func main() {
 		panic(err)
 	}
 
+	db, err := sql.Open("postgres", "postgres://postgres:postgress@localhost:5432/gator")
+	if err != nil {
+		fmt.Printf("could not open database: %v", err)
+	}
+	dbQueries := database.New(db)
+
 	currentState := state{
+		db:  dbQueries,
 		cfg: &conf,
 	}
 
@@ -24,12 +35,13 @@ func main() {
 	}
 
 	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerReset)
 
 	// Get command-line arguments passed by the user
 	argsWithProg := os.Args
-	argsWithoutProg := os.Args[1:]
 
-	if len(argsWithoutProg) < 2 {
+	if len(argsWithProg) < 2 {
 		fmt.Println("not enough arguments provided")
 		os.Exit(1)
 	}
@@ -37,6 +49,9 @@ func main() {
 	inputCmdName := argsWithProg[1]
 	inputArgs := argsWithProg[2:]
 
-	cmds.run(&currentState, command{name: inputCmdName, args: inputArgs})
-
+	err = cmds.run(&currentState, command{name: inputCmdName, args: inputArgs})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 }
