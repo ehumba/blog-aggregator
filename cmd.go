@@ -95,6 +95,21 @@ func handlerUsers(s *state, cmd command) error {
 	return nil
 }
 
+func handlerAgg(s *state, cmd command) error {
+	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	if err != nil {
+		return fmt.Errorf("aggregation failed: %v", err)
+	}
+	finalFeed := unescape(feed)
+	fmt.Println(finalFeed.Channel.Title)
+	fmt.Println(finalFeed.Channel.Description)
+	for _, item := range finalFeed.Channel.Item {
+		fmt.Println(item.Title)
+		fmt.Println(item.Description)
+	}
+	return nil
+}
+
 func (c *commands) run(s *state, cmd command) error {
 	handler, ok := c.cmds[cmd.name]
 	if !ok {
