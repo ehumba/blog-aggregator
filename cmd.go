@@ -100,13 +100,41 @@ func handlerAgg(s *state, cmd command) error {
 	if err != nil {
 		return fmt.Errorf("aggregation failed: %v", err)
 	}
-	finalFeed := unescape(feed)
-	fmt.Println(finalFeed.Channel.Title)
-	fmt.Println(finalFeed.Channel.Description)
-	for _, item := range finalFeed.Channel.Item {
+	unescape(feed)
+	fmt.Println(feed.Channel.Title)
+	fmt.Println(feed.Channel.Description)
+	for _, item := range feed.Channel.Item {
 		fmt.Println(item.Title)
 		fmt.Println(item.Description)
 	}
+	return nil
+}
+
+func handlerAddFeed(s *state, cmd command) error {
+	if len(cmd.args) != 2 {
+		return fmt.Errorf("two arguments required: <name> <url>")
+	}
+	name := cmd.args[0]
+	url := cmd.args[1]
+
+	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return err
+	}
+
+	newFeed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		Name:      name,
+		Url:       url,
+		UserID:    currentUser.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("falied to create new Feed: %v", err)
+	}
+	fmt.Printf("New feed added!\nID: %v\nCreated at: %v\nUpdated at: %v\nName: %v\nURL: %v\nUser ID: %v\n", newFeed.ID, newFeed.CreatedAt, newFeed.UpdatedAt, newFeed.Name, newFeed.Url, newFeed.UserID)
+
 	return nil
 }
 
