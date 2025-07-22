@@ -159,6 +159,36 @@ func handlerFeeds(s *state, cmd command) error {
 	return nil
 }
 
+func handlerFollow(s *state, cmd command) error {
+	if len(cmd.args) != 1 {
+		return fmt.Errorf("one argument required: <url>")
+	}
+
+	feedToFollow, err := s.db.GetFeed(context.Background(), cmd.args[0])
+	if err != nil {
+		return fmt.Errorf("feed not found")
+	}
+
+	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return err
+	}
+
+	newFollow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    currentUser.ID,
+		FeedID:    feedToFollow.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to follow: %v", err)
+	}
+
+	fmt.Printf("%s successfully followed %s\n", newFollow.UserName, newFollow.FeedName)
+	return nil
+}
+
 func (c *commands) run(s *state, cmd command) error {
 	handler, ok := c.cmds[cmd.name]
 	if !ok {
