@@ -135,6 +135,18 @@ func handlerAddFeed(s *state, cmd command) error {
 	}
 	fmt.Printf("New feed added!\nID: %v\nCreated at: %v\nUpdated at: %v\nName: %v\nURL: %v\nUser ID: %v\n", newFeed.ID, newFeed.CreatedAt, newFeed.UpdatedAt, newFeed.Name, newFeed.Url, newFeed.UserID)
 
+	_, err = s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		UserID:    currentUser.ID,
+		FeedID:    newFeed.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to follow: %v", err)
+	}
+	fmt.Printf("%s successfully followed %s!\n", s.cfg.CurrentUserName, newFeed.Name)
+
 	return nil
 }
 
@@ -186,6 +198,25 @@ func handlerFollow(s *state, cmd command) error {
 	}
 
 	fmt.Printf("%s successfully followed %s\n", newFollow.UserName, newFollow.FeedName)
+	return nil
+}
+
+func handlerFollowing(s *state, cmd command) error {
+	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	if err != nil {
+		return err
+	}
+
+	following, err := s.db.GetFeedFollowsForUser(context.Background(), currentUser.ID)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("%s follows:\n", s.cfg.CurrentUserName)
+
+	for _, follow := range following {
+		fmt.Println(follow.FeedName)
+	}
 	return nil
 }
 
