@@ -110,17 +110,12 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
+func handlerAddFeed(s *state, cmd command, currentUser database.User) error {
 	if len(cmd.args) != 2 {
 		return fmt.Errorf("two arguments required: <name> <url>")
 	}
 	name := cmd.args[0]
 	url := cmd.args[1]
-
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
 
 	newFeed, err := s.db.CreateFeed(context.Background(), database.CreateFeedParams{
 		ID:        uuid.New(),
@@ -171,7 +166,7 @@ func handlerFeeds(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, currentUser database.User) error {
 	if len(cmd.args) != 1 {
 		return fmt.Errorf("one argument required: <url>")
 	}
@@ -179,11 +174,6 @@ func handlerFollow(s *state, cmd command) error {
 	feedToFollow, err := s.db.GetFeed(context.Background(), cmd.args[0])
 	if err != nil {
 		return fmt.Errorf("feed not found")
-	}
-
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
 	}
 
 	newFollow, err := s.db.CreateFeedFollow(context.Background(), database.CreateFeedFollowParams{
@@ -201,12 +191,7 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return err
-	}
-
+func handlerFollowing(s *state, cmd command, currentUser database.User) error {
 	following, err := s.db.GetFeedFollowsForUser(context.Background(), currentUser.ID)
 	if err != nil {
 		return err
@@ -217,6 +202,23 @@ func handlerFollowing(s *state, cmd command) error {
 	for _, follow := range following {
 		fmt.Println(follow.FeedName)
 	}
+	return nil
+}
+
+func handlerUnfollow(s *state, cmd command, currentUser database.User) error {
+	if len(cmd.args) != 1 {
+		return fmt.Errorf("one argument required: <url>")
+	}
+	url := cmd.args[0]
+
+	err := s.db.DeleteFollow(context.Background(), database.DeleteFollowParams{
+		Url:  url,
+		Name: currentUser.Name,
+	})
+	if err != nil {
+		return fmt.Errorf("failed to unfollow: %v", url)
+	}
+	fmt.Printf("%s successfully unfollowed %s\n", s.cfg.CurrentUserName, url)
 	return nil
 }
 
