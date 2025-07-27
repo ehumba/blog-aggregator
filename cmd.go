@@ -96,17 +96,25 @@ func handlerUsers(s *state, cmd command) error {
 }
 
 func handlerAgg(s *state, cmd command) error {
-	feed, err := fetchFeed(context.Background(), "https://www.wagslane.dev/index.xml")
+	// parse the argument into a Duration
+	if len(cmd.args) != 1 {
+		return fmt.Errorf("one argument required, example: 10s")
+	}
+	timeBetweenReqs := cmd.args[0]
+	parsedTime, err := time.ParseDuration(timeBetweenReqs)
 	if err != nil {
-		return fmt.Errorf("aggregation failed: %v", err)
+		return fmt.Errorf("invalid duration string. Please enter a duration in the format 1s, 1m, 1h, etc")
 	}
-	unescape(feed)
-	fmt.Println(feed.Channel.Title)
-	fmt.Println(feed.Channel.Description)
-	for _, item := range feed.Channel.Item {
-		fmt.Println(item.Title)
-		fmt.Println(item.Description)
+
+	// start the loop of scraping feeds with a ticker
+	fmt.Printf("Collecting feeds every %v\n", parsedTime)
+	ticker := time.NewTicker(parsedTime)
+	defer ticker.Stop()
+	scrapeFeeds(s)
+	for range ticker.C {
+		scrapeFeeds(s)
 	}
+
 	return nil
 }
 
