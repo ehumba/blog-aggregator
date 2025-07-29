@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/ehumba/blog-aggregator/internal/database"
+	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 func scrapeFeeds(s *state) {
@@ -35,12 +37,54 @@ func scrapeFeeds(s *state) {
 
 	unescape(feedOutput)
 
-	// print content
-	fmt.Println(feedOutput.Channel.Title)
-	fmt.Println(feedOutput.Channel.Description)
+	// get published time
 	for _, item := range feedOutput.Channel.Item {
-		fmt.Println(item.Title)
-		fmt.Println(item.Description)
-	}
+		var publishedAt time.Time
+		var parseErr error
 
+		layouts := []string{
+			time.RFC1123Z,
+			time.RFC1123,
+			time.RFC822Z,
+			time.RFC822,
+			time.RFC3339,
+		}
+
+		for _, layout := range layouts {
+			publishedAt, parseErr = time.Parse(layout, item.PubDate)
+			if parseErr == nil {
+				break
+			}
+		}
+		if parseErr != nil {
+			fmt.Printf("could not parse published time: %v", parseErr)
+			publishedAt = time.Now()
+		}
+
+		// create the post
+		_, err := s.db.CreatePost(context.Background(), database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now(),
+			UpdatedAt:   time.Now(),
+			Name:        item.Title,
+			Url:         item.Link,
+			Description: sql.NullString{String: item.Description, Valid: item.Description != ""},
+			PublishedAt: publishedAt,
+			FeedID:      nextFeed.ID,
+		})
+		if err != nil {
+			if isUniqueViolation(err) {
+				continue
+			}
+			fmt.Printf("failed to create post: %v\n", err)
+		}
+	}
+}
+
+// helper function to check if the error is a unique violation
+func isUniqueViolation(err error) bool {
+	if pqErr, ok := err.(*pq.Error); ok {
+		return pqErr.Code == "23505"
+	}
+	return false
 }

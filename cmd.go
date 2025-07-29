@@ -98,7 +98,7 @@ func handlerUsers(s *state, cmd command) error {
 func handlerAgg(s *state, cmd command) error {
 	// parse the argument into a Duration
 	if len(cmd.args) != 1 {
-		return fmt.Errorf("one argument required, example: 10s")
+		return fmt.Errorf("one argument required: <duration> (example: 10s)")
 	}
 	timeBetweenReqs := cmd.args[0]
 	parsedTime, err := time.ParseDuration(timeBetweenReqs)
