@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/ehumba/blog-aggregator/internal/config"
@@ -227,6 +228,40 @@ func handlerUnfollow(s *state, cmd command, currentUser database.User) error {
 		return fmt.Errorf("failed to unfollow: %v", url)
 	}
 	fmt.Printf("%s successfully unfollowed %s\n", s.cfg.CurrentUserName, url)
+	return nil
+}
+
+func handlerBrowse(s *state, cmd command, currentUser database.User) error {
+	limit := "2"
+	if len(cmd.args) > 0 {
+		limit = cmd.args[0]
+	}
+
+	parsedLimit, err := strconv.Atoi(limit)
+	if err != nil {
+		return fmt.Errorf("invalid limit: %v", err)
+	}
+
+	fmt.Println("You may enter a limit for displayed posts. Default: 2")
+
+	posts, err := s.db.GetPostsForUser(context.Background(), database.GetPostsForUserParams{
+		UserID: currentUser.ID,
+		Limit:  int32(parsedLimit),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to get posts: %v", err)
+	}
+
+	for _, post := range posts {
+		fmt.Printf("Title: %v\n", post.Name)
+		fmt.Printf("Post URL: %v\n", post.Url)
+		fmt.Printf("Published at: %v\n", post.PublishedAt)
+		if post.Description.Valid {
+			fmt.Printf("Description: %v\n", post.Description.String)
+		}
+		fmt.Println("---------------------")
+	}
+
 	return nil
 }
 

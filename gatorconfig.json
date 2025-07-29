@@ -1,4 +1,4 @@
 {
   "db_url": "postgres://postgres:postgress@localhost:5432/gator?sslmode=disable",
-  "current_user_name": "kahya"
+  "current_user_name": "alice"
 }
