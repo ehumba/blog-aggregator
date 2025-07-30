@@ -12,8 +12,8 @@ In order to use the blog aggregator, you will need to have **Go** and **PostgreS
 
 To install Go and PostgreSQL, please follow the instructions from the links below:
 
-**Install Go**: https://go.dev/doc/install
-**Install PostgreSQL**: https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-database#install-postgresql
+- **Install Go**: https://go.dev/doc/install
+- **Install PostgreSQL**: https://learn.microsoft.com/en-us/windows/wsl/tutorials/wsl-database#install-postgresql
 
 Next, install the program by running `go install github.com/ehumba/blog-aggregator`. 
 
